@@ -17,32 +17,39 @@ public class PlayerController : MonoBehaviour
 
     InputManager inputManager;
 
+    private Transform camTransform;
+
     private void Start()
     {
         controller = GetComponent<CharacterController>();
         inputManager = InputManager.Instance;
+        camTransform = Camera.main.transform;
     }
 
     void Update()
     {
-        groundedPlayer = controller.isGrounded;
-        if (groundedPlayer && playerVelocity.y < 0)
-        {
-            playerVelocity.y = 0f;
-        }
+        PlayerMove();
+        PlayerJump();
 
-        //Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
 
-        Vector3 movement = inputManager.GetPlayerMovement();
+    }
+
+
+    void PlayerMove()
+    {
+        Vector2 movement = inputManager.GetPlayerMovement();
         Vector3 move = new Vector3(movement.x, 0f, movement.y);
-        controller.Move(move * Time.deltaTime * playerSpeed);
+        move = camTransform.forward * move.z + camTransform.right * move.x;
+        move.y = 0f;
+        controller.Move(move.normalized * Time.deltaTime * playerSpeed);
 
-        if (move != Vector3.zero)
-        {
-            gameObject.transform.forward = move;
-        }
-
-        // Changes the height position of the player..
+        //rotate player same y as cam is rotating
+        transform.rotation = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f);
+    }
+    
+    void PlayerJump()
+    {
+        //jump
         if (inputManager.GetPlayerJumped() && groundedPlayer)
         {
             playerVelocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravityValue);
@@ -52,6 +59,11 @@ public class PlayerController : MonoBehaviour
         controller.Move(playerVelocity * Time.deltaTime);
 
 
-
+        //ground check
+        groundedPlayer = controller.isGrounded;
+        if (groundedPlayer && playerVelocity.y < 0)
+        {
+            playerVelocity.y = -.1f;
+        }
     }
 }
